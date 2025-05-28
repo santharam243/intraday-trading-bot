@@ -5,17 +5,12 @@ import yfinance as yf
 from datetime import datetime
 import pytz
 
-# Get Telegram bot info from env (GitHub Secrets)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        'chat_id': TELEGRAM_CHAT_ID,
-        'text': message,
-        'parse_mode': 'Markdown'
-    }
+    payload = {'chat_id': TELEGRAM_CHAT_ID, 'text': message, 'parse_mode': 'Markdown'}
     try:
         response = requests.post(url, data=payload)
         response.raise_for_status()
@@ -23,7 +18,6 @@ def send_telegram_message(message):
         print(f"Failed to send message: {e}")
 
 def get_nifty_50_tickers():
-    # Hardcoded current Nifty 50 tickers with NSE suffix for Yahoo Finance
     return [
         'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'HINDUNILVR.NS',
         'ICICIBANK.NS', 'KOTAKBANK.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'ITC.NS',
@@ -77,62 +71,14 @@ def analyze_stock(ticker):
         macd, signal_line, _ = compute_macd(close)
         stoch_k, stoch_d = compute_stochastic_oscillator(df)
 
-        # Safely convert single-value Series to float
-        latest_rsi = float(rsi.iloc[-1]) if not rsi.empty else 0.0
-        latest_macd = float(macd.iloc[-1]) if not macd.empty else 0.0
-        latest_signal = float(signal_line.iloc[-1]) if not signal_line.empty else 0.0
-        prev_macd = float(macd.iloc[-2]) if len(macd) > 1 else 0.0
-        prev_signal = float(signal_line.iloc[-2]) if len(signal_line) > 1 else 0.0
-        latest_stoch_k = float(stoch_k.iloc[-1]) if not stoch_k.empty else 0.0
-        latest_stoch_d = float(stoch_d.iloc[-1]) if not stoch_d.empty else 0.0
-        avg_volume = float(volume.rolling(window=20).mean().iloc[-1]) if len(volume) >= 20 else 0.0
-        latest_volume = float(volume.iloc[-1]) if not volume.empty else 0.0
+        latest_rsi = float(rsi.iloc[-1].item()) if not rsi.empty else 0.0
+        latest_macd = float(macd.iloc[-1].item()) if not macd.empty else 0.0
+        latest_signal = float(signal_line.iloc[-1].item()) if not signal_line.empty else 0.0
+        prev_macd = float(macd.iloc[-2].item()) if len(macd) > 1 else 0.0
+        prev_signal = float(signal_line.iloc[-2].item()) if len(signal_line) > 1 else 0.0
+        latest_stoch_k = float(stoch_k.iloc[-1].item()) if not stoch_k.empty else 0.0
+        latest_stoch_d = float(stoch_d.iloc[-1].item()) if not stoch_d.empty else 0.0
+        avg_volume = float(volume.rolling(window=20).mean().iloc[-1].item()) if len(volume) >= 20 else 0.0
+        latest_volume = float(volume.iloc[-1].item()) if not volume.empty else 0.0
 
-        # Check for NaNs - skip if any indicator value is nan
-        if any(np.isnan([latest_rsi, latest_macd, latest_signal, prev_macd, prev_signal, latest_stoch_k, latest_stoch_d])):
-            return None
-
-        # Simple Volume filter: only consider signals if latest volume >= 80% of 20 period average volume
-        if latest_volume < 0.8 * avg_volume:
-            return None
-
-        # Example logic for buy/sell signals using RSI, MACD crossover and stochastic oscillator
-
-        # MACD crossover detection
-        macd_cross_up = (prev_macd < prev_signal) and (latest_macd > latest_signal)
-        macd_cross_down = (prev_macd > prev_signal) and (latest_macd < latest_signal)
-
-        # Buy signal condition
-        if (latest_rsi < 40 and macd_cross_up and latest_stoch_k < 20 and latest_stoch_k > latest_stoch_d):
-            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
-
-        # Sell signal condition
-        if (latest_rsi > 60 and macd_cross_down and latest_stoch_k > 80 and latest_stoch_k < latest_stoch_d):
-            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
-
-    except Exception as e:
-        print(f"Error analyzing {ticker}: {e}")
-
-    return None
-
-def main():
-    tickers = get_nifty_50_tickers()
-    signals = []
-
-    for ticker in tickers:
-        signal = analyze_stock(ticker)
-        if signal:
-            signals.append(signal)
-
-    ist = pytz.timezone('Asia/Kolkata')
-    now_ist = datetime.now(ist).strftime('%-d %b %Y %I:%M %p').lower()
-    if signals:
-        message = f"📊 *Intraday Trading Signals* @ {now_ist}\n\n" + "\n".join(signals)
-    else:
-        message = f"📊 No strong signals @ {now_ist}"
-
-    send_telegram_message(message)
-    print(message)
-
-if __name__ == '__main__':
-    main()
+        if any(np.isnan([latest_rsi, latest_macd, late]()
