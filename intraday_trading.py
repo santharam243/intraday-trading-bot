@@ -99,7 +99,7 @@ def analyze_stock(ticker):
 
         # Loosened Strong Buy signal conditions
         # RSI less than 40, MACD close to crossover (macd just crossed or about to cross signal)
-        if (latest_rsi < 40) and (latest_macd >= latest_signal - 0.0005)):
+        if (latest_rsi < 40) and (latest_macd >= latest_signal - 0.0005):
             return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
 
         # Loosened Strong Sell signal conditions
