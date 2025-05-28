@@ -58,23 +58,23 @@ def compute_macd(series, fast=12, slow=26, signal=9):
     histogram = macd - signal_line
     return macd, signal_line, histogram
 
-def calculate_bollinger_bands(df, window=20, num_std=2):
-    sma = df['Close'].rolling(window=window).mean()
-    std = df['Close'].rolling(window=window).std()
-    upper_band = sma + (num_std * std)
-    lower_band = sma - (num_std * std)
-    return upper_band, lower_band
+# def calculate_bollinger_bands(df, window=20, num_std=2):
+#     sma = df['Close'].rolling(window=window).mean()
+#     std = df['Close'].rolling(window=window).std()
+#     upper_band = sma + (num_std * std)
+#     lower_band = sma - (num_std * std)
+#     return upper_band, lower_band
 
-def bollinger_band_signal(df):
-    upper_band, lower_band = calculate_bollinger_bands(df)
-    close = df['Close'].squeeze()
+# def bollinger_band_signal(df):
+#     upper_band, lower_band = calculate_bollinger_bands(df)
+#     close = df['Close'].squeeze()
 
-    if close <= lower_band.iloc[-1]:
-        return "buy"
-    elif close >= upper_band.iloc[-1]:
-        return "sell"
-    else:
-        return "hold"
+#     if close <= lower_band.iloc[-1]:
+#         return "buy"
+#     elif close >= upper_band.iloc[-1]:
+#         return "sell"
+#     else:
+#         return "hold"
 
 def analyze_stock(ticker):
     try:
@@ -89,23 +89,23 @@ def analyze_stock(ticker):
         latest_rsi = rsi.iloc[-1]
         latest_macd = macd.iloc[-1]
         latest_signal = signal_line.iloc[-1]
-        latest_bollinger_band_signal = bollinger_band_signal(df)
+        # latest_bollinger_band_signal = bollinger_band_signal(df)
 
-        print(f"{ticker} - rsi: {latest_rsi} macd: {latest_macd} signal: {latest_signal} bollinger band: {latest_bollinger_band_signal}")
+        print(f"{ticker} - rsi: {latest_rsi} macd: {latest_macd} signal: {latest_signal}")
 
         # Skip if any nan values in latest indicators
         if np.isnan([latest_rsi, latest_macd, latest_signal]).any():
             return None
 
         # Loosened Strong Buy signal conditions
-        # RSI less than 40, MACD close to crossover (macd just crossed or about to cross signal), Bollinger Band = Buy
-        if (latest_rsi < 40) and (latest_macd >= latest_signal - 0.0005) and (latest_bollinger_band_signal == "buy"):
-            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, BOLLINGER BAND: {latest_bollinger_band_signal})"
+        # RSI less than 40, MACD close to crossover (macd just crossed or about to cross signal)
+        if (latest_rsi < 40) and (latest_macd >= latest_signal - 0.0005)):
+            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
 
         # Loosened Strong Sell signal conditions
-        # RSI greater than 60, MACD close to crossover down (macd just below or about to cross below signal), Bollinger Band = Sell
-        if (latest_rsi > 60) and (latest_macd <= latest_signal + 0.0005) and (latest_bollinger_band_signal == "sell"):
-            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, BOLLINGER BAND: {latest_bollinger_band_signal:.2f})"
+        # RSI greater than 60, MACD close to crossover down (macd just below or about to cross below signal)
+        if (latest_rsi > 60) and (latest_macd <= latest_signal + 0.0005):
+            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
 
     except Exception as e:
         print(f"Error analyzing {ticker}: {e}")
