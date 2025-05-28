@@ -3,6 +3,7 @@ import requests
 import numpy as np
 import yfinance as yf
 from datetime import datetime
+import pytz
 
 # Get Telegram bot info from env (GitHub Secrets)
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
@@ -100,11 +101,12 @@ def main():
         if signal:
             signals.append(signal)
 
-    now = datetime.now().strftime('%Y-%m-%d %H:%M')
+    ist = pytz.timezone('Asia/Kolkata')
+    now_ist = datetime.now(ist).strftime('%Y-%m-%d %H:%M')
     if signals:
-        message = f"📊 *Intraday Trading Signals* @ {now}\n\n" + "\n".join(signals)
+        message = f"📊 *Intraday Trading Signals* @ {now_ist}\n\n" + "\n".join(signals)
     else:
-        message = f"📊 No strong signals @ {now}"
+        message = f"📊 No strong signals @ {now_ist}"
 
     send_telegram_message(message)
     print(message)
