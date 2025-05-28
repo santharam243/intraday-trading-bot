@@ -30,4 +30,4 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           echo "{\"telegram_bot_token\": \"${TELEGRAM_BOT_TOKEN}\", \"telegram_chat_id\": \"${TELEGRAM_CHAT_ID}\"}" > config.json
-          python trading_script.py
+          python intraday_trading.py
