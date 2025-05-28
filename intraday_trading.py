@@ -58,24 +58,6 @@ def compute_macd(series, fast=12, slow=26, signal=9):
     histogram = macd - signal_line
     return macd, signal_line, histogram
 
-# def calculate_bollinger_bands(df, window=20, num_std=2):
-#     sma = df['Close'].rolling(window=window).mean()
-#     std = df['Close'].rolling(window=window).std()
-#     upper_band = sma + (num_std * std)
-#     lower_band = sma - (num_std * std)
-#     return upper_band, lower_band
-
-# def bollinger_band_signal(df):
-#     upper_band, lower_band = calculate_bollinger_bands(df)
-#     close = df['Close'].squeeze()
-
-#     if close <= lower_band.iloc[-1]:
-#         return "buy"
-#     elif close >= upper_band.iloc[-1]:
-#         return "sell"
-#     else:
-#         return "hold"
-
 def analyze_stock(ticker):
     try:
         df = yf.download(ticker, period='5d', interval='15m', progress=False)
@@ -89,9 +71,6 @@ def analyze_stock(ticker):
         latest_rsi = rsi.iloc[-1]
         latest_macd = macd.iloc[-1]
         latest_signal = signal_line.iloc[-1]
-        # latest_bollinger_band_signal = bollinger_band_signal(df)
-
-        print(f"{ticker} - rsi: {latest_rsi} macd: {latest_macd} signal: {latest_signal}")
 
         # Skip if any nan values in latest indicators
         if np.isnan([latest_rsi, latest_macd, latest_signal]).any():
