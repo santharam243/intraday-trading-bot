@@ -102,7 +102,7 @@ def main():
             signals.append(signal)
 
     ist = pytz.timezone('Asia/Kolkata')
-    now_ist = datetime.now(ist).strftime('%Y-%m-%d %H:%M')
+    now_ist = datetime.now(ist).strftime('%-d %b %Y %I:%M %p').lower()
     if signals:
         message = f"📊 *Intraday Trading Signals* @ {now_ist}\n\n" + "\n".join(signals)
     else:
