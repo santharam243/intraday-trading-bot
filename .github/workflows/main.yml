@@ -31,6 +31,7 @@ on:
     - cron: '45 9 * * 1-5'
     - cron: '0 10 * * 1-5'
     - cron: '23 14 * * *'
+  workflow_dispatch:
 
 jobs:
   run-script:
