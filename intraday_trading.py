@@ -35,7 +35,7 @@ def get_nifty_50_tickers():
         'COALINDIA.NS', 'GRASIM.NS', 'BPCL.NS', 'BAJAJ-AUTO.NS', 'ADANIPORTS.NS',
         'HDFCLIFE.NS', 'HEROMOTOCO.NS', 'TATAMOTORS.NS', 'EICHERMOT.NS',
         'SBILIFE.NS', 'BAJAJFINSV.NS', 'INDUSINDBK.NS', 'CIPLA.NS',
-        'HINDALCO.NS', 'BRITANNIA.NS', 'SHREECEM.NS'
+        'HINDALCO.NS', 'BRITANNIA.NS', 'SHREECEM.NS', 'TCS.NS'  # removed duplicates if any
     ]
 
 def compute_rsi(series, period=14):
@@ -56,10 +56,10 @@ def compute_macd(series, fast=12, slow=26, signal=9):
     histogram = macd - signal_line
     return macd, signal_line, histogram
 
-def compute_stochastic(df, k_period=14, d_period=3):
+def compute_stochastic_oscillator(df, k_period=14, d_period=3):
     low_min = df['Low'].rolling(window=k_period).min()
     high_max = df['High'].rolling(window=k_period).max()
-    stoch_k = 100 * (df['Close'] - low_min) / (high_max - low_min)
+    stoch_k = 100 * ((df['Close'] - low_min) / (high_max - low_min))
     stoch_d = stoch_k.rolling(window=d_period).mean()
     return stoch_k, stoch_d
 
@@ -70,31 +70,12 @@ def analyze_stock(ticker):
             return None
 
         close = df['Close']
-        volume = df['Volume']
-        avg_volume = volume.rolling(window=14).mean().dropna()
-        if avg_volume.empty:
-            return None
-        avg_volume = float(avg_volume.iloc[-1])
-        latest_volume = float(volume.dropna().iloc[-1])
-
-        # Volume filter: skip low volume stocks
-        if latest_volume < avg_volume:
-            return None
 
         rsi = compute_rsi(close)
         macd, signal_line, _ = compute_macd(close)
-        stoch_k, stoch_d = compute_stochastic(df)
+        stoch_k, stoch_d = compute_stochastic_oscillator(df)
 
-        # Extract latest and previous valid values safely
-        rsi = rsi.dropna()
-        macd = macd.dropna()
-        signal_line = signal_line.dropna()
-        stoch_k = stoch_k.dropna()
-        stoch_d = stoch_d.dropna()
-
-        if len(rsi) < 2 or len(macd) < 2 or len(signal_line) < 2 or len(stoch_k) < 1 or len(stoch_d) < 1:
-            return None
-
+        # Convert to float scalars to avoid FutureWarning
         latest_rsi = float(rsi.iloc[-1])
         latest_macd = float(macd.iloc[-1])
         latest_signal = float(signal_line.iloc[-1])
@@ -103,16 +84,32 @@ def analyze_stock(ticker):
         latest_stoch_k = float(stoch_k.iloc[-1])
         latest_stoch_d = float(stoch_d.iloc[-1])
 
-        macd_bull_cross = (prev_macd < prev_signal) and (latest_macd > latest_signal)
-        macd_bear_cross = (prev_macd > prev_signal) and (latest_macd < latest_signal)
+        volume = df['Volume'].dropna()
+        avg_volume = float(volume.rolling(window=20).mean().iloc[-1])
+        latest_volume = float(volume.iloc[-1])
 
-        # Buy condition
-        if (latest_rsi < 30) and macd_bull_cross and (latest_stoch_k < 20 and latest_stoch_k > latest_stoch_d):
-            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, StochK: {latest_stoch_k:.2f})"
+        # Check for NaNs
+        if np.isnan([latest_rsi, latest_macd, latest_signal,
+                     prev_macd, prev_signal,
+                     latest_stoch_k, latest_stoch_d,
+                     avg_volume, latest_volume]).any():
+            return None
 
-        # Sell condition
-        if (latest_rsi > 70) and macd_bear_cross and (latest_stoch_k > 80 and latest_stoch_k < latest_stoch_d):
-            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, StochK: {latest_stoch_k:.2f})"
+        # Volume filter to avoid low liquidity stocks
+        if latest_volume < 0.5 * avg_volume:
+            return None
+
+        # MACD crossover detection
+        macd_cross_up = (prev_macd < prev_signal) and (latest_macd > latest_signal)
+        macd_cross_down = (prev_macd > prev_signal) and (latest_macd < latest_signal)
+
+        # Buy signal
+        if (latest_rsi < 40) and macd_cross_up and (latest_stoch_k > latest_stoch_d):
+            return f"📈 *BUY* {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD crossover, Stoch K: {latest_stoch_k:.2f})"
+
+        # Sell signal
+        if (latest_rsi > 60) and macd_cross_down and (latest_stoch_k < latest_stoch_d):
+            return f"📉 *SELL* {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD crossover, Stoch K: {latest_stoch_k:.2f})"
 
     except Exception as e:
         print(f"Error analyzing {ticker}: {e}")
