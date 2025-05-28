@@ -1,7 +1,6 @@
 import os
 import requests
 import numpy as np
-import pandas as pd
 import yfinance as yf
 from datetime import datetime
 import pytz
@@ -35,10 +34,11 @@ def get_nifty_50_tickers():
         'COALINDIA.NS', 'GRASIM.NS', 'BPCL.NS', 'BAJAJ-AUTO.NS', 'ADANIPORTS.NS',
         'HDFCLIFE.NS', 'HEROMOTOCO.NS', 'TATAMOTORS.NS', 'EICHERMOT.NS',
         'SBILIFE.NS', 'BAJAJFINSV.NS', 'INDUSINDBK.NS', 'CIPLA.NS',
-        'HINDALCO.NS', 'BRITANNIA.NS', 'SHREECEM.NS', 'TCS.NS'  # removed duplicates if any
+        'HINDALCO.NS', 'BRITANNIA.NS', 'SHREECEM.NS', 'ULTRACEMCO.NS'
     ]
 
 def compute_rsi(series, period=14):
+    series = series.squeeze()
     delta = series.diff()
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
@@ -49,6 +49,7 @@ def compute_rsi(series, period=14):
     return rsi
 
 def compute_macd(series, fast=12, slow=26, signal=9):
+    series = series.squeeze()
     ema_fast = series.ewm(span=fast, adjust=False).mean()
     ema_slow = series.ewm(span=slow, adjust=False).mean()
     macd = ema_fast - ema_slow
@@ -69,47 +70,45 @@ def analyze_stock(ticker):
         if df.empty or len(df) < 50:
             return None
 
-        close = df['Close']
+        close = df['Close'].squeeze()
+        volume = df['Volume'].squeeze()
 
         rsi = compute_rsi(close)
         macd, signal_line, _ = compute_macd(close)
         stoch_k, stoch_d = compute_stochastic_oscillator(df)
 
-        # Convert to float scalars to avoid FutureWarning
-        latest_rsi = float(rsi.iloc[-1])
-        latest_macd = float(macd.iloc[-1])
-        latest_signal = float(signal_line.iloc[-1])
-        prev_macd = float(macd.iloc[-2])
-        prev_signal = float(signal_line.iloc[-2])
-        latest_stoch_k = float(stoch_k.iloc[-1])
-        latest_stoch_d = float(stoch_d.iloc[-1])
+        # Safely convert single-value Series to float
+        latest_rsi = float(rsi.iloc[-1]) if not rsi.empty else 0.0
+        latest_macd = float(macd.iloc[-1]) if not macd.empty else 0.0
+        latest_signal = float(signal_line.iloc[-1]) if not signal_line.empty else 0.0
+        prev_macd = float(macd.iloc[-2]) if len(macd) > 1 else 0.0
+        prev_signal = float(signal_line.iloc[-2]) if len(signal_line) > 1 else 0.0
+        latest_stoch_k = float(stoch_k.iloc[-1]) if not stoch_k.empty else 0.0
+        latest_stoch_d = float(stoch_d.iloc[-1]) if not stoch_d.empty else 0.0
+        avg_volume = float(volume.rolling(window=20).mean().iloc[-1]) if len(volume) >= 20 else 0.0
+        latest_volume = float(volume.iloc[-1]) if not volume.empty else 0.0
 
-        volume = df['Volume'].dropna()
-        avg_volume = float(volume.rolling(window=20).mean().iloc[-1])
-        latest_volume = float(volume.iloc[-1])
-
-        # Check for NaNs
-        if np.isnan([latest_rsi, latest_macd, latest_signal,
-                     prev_macd, prev_signal,
-                     latest_stoch_k, latest_stoch_d,
-                     avg_volume, latest_volume]).any():
+        # Check for NaNs - skip if any indicator value is nan
+        if any(np.isnan([latest_rsi, latest_macd, latest_signal, prev_macd, prev_signal, latest_stoch_k, latest_stoch_d])):
             return None
 
-        # Volume filter to avoid low liquidity stocks
-        if latest_volume < 0.5 * avg_volume:
+        # Simple Volume filter: only consider signals if latest volume >= 80% of 20 period average volume
+        if latest_volume < 0.8 * avg_volume:
             return None
+
+        # Example logic for buy/sell signals using RSI, MACD crossover and stochastic oscillator
 
         # MACD crossover detection
         macd_cross_up = (prev_macd < prev_signal) and (latest_macd > latest_signal)
         macd_cross_down = (prev_macd > prev_signal) and (latest_macd < latest_signal)
 
-        # Buy signal
-        if (latest_rsi < 40) and macd_cross_up and (latest_stoch_k > latest_stoch_d):
-            return f"📈 *BUY* {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD crossover, Stoch K: {latest_stoch_k:.2f})"
+        # Buy signal condition
+        if (latest_rsi < 40 and macd_cross_up and latest_stoch_k < 20 and latest_stoch_k > latest_stoch_d):
+            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
 
-        # Sell signal
-        if (latest_rsi > 60) and macd_cross_down and (latest_stoch_k < latest_stoch_d):
-            return f"📉 *SELL* {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD crossover, Stoch K: {latest_stoch_k:.2f})"
+        # Sell signal condition
+        if (latest_rsi > 60 and macd_cross_down and latest_stoch_k > 80 and latest_stoch_k < latest_stoch_d):
+            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f})"
 
     except Exception as e:
         print(f"Error analyzing {ticker}: {e}")
@@ -127,7 +126,6 @@ def main():
 
     ist = pytz.timezone('Asia/Kolkata')
     now_ist = datetime.now(ist).strftime('%-d %b %Y %I:%M %p').lower()
-
     if signals:
         message = f"📊 *Intraday Trading Signals* @ {now_ist}\n\n" + "\n".join(signals)
     else:
