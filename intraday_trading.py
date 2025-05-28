@@ -89,24 +89,23 @@ def analyze_stock(ticker):
         latest_rsi = rsi.iloc[-1]
         latest_macd = macd.iloc[-1]
         latest_signal = signal_line.iloc[-1]
-        latest_adx = adx.iloc[-1]
         latest_bollinger_band_signal = bollinger_band_signal(df)
 
-        print(f"{ticker} - rsi: {latest_rsi} macd: {latest_macd} signal: {latest_signal} adx: {latest_adx}")
+        print(f"{ticker} - rsi: {latest_rsi} macd: {latest_macd} signal: {latest_signal} bollinger band: {latest_bollinger_band_signal}")
 
         # Skip if any nan values in latest indicators
         if np.isnan([latest_rsi, latest_macd, latest_signal]).any():
             return None
 
         # Loosened Strong Buy signal conditions
-        # RSI less than 40, MACD close to crossover (macd just crossed or about to cross signal), ADX > 15
+        # RSI less than 40, MACD close to crossover (macd just crossed or about to cross signal), Bollinger Band = Buy
         if (latest_rsi < 40) and (latest_macd >= latest_signal - 0.0005) and (latest_bollinger_band_signal == "buy"):
-            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, ADX: {latest_adx:.2f})"
+            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, BOLLINGER BAND: {latest_bollinger_band_signal})"
 
         # Loosened Strong Sell signal conditions
-        # RSI greater than 60, MACD close to crossover down (macd just below or about to cross below signal), ADX > 15
+        # RSI greater than 60, MACD close to crossover down (macd just below or about to cross below signal), Bollinger Band = Sell
         if (latest_rsi > 60) and (latest_macd <= latest_signal + 0.0005) and (latest_bollinger_band_signal == "sell"):
-            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, ADX: {latest_adx:.2f})"
+            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, BOLLINGER BAND: {latest_bollinger_band_signal:.2f})"
 
     except Exception as e:
         print(f"Error analyzing {ticker}: {e}")
