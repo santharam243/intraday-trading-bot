@@ -102,6 +102,8 @@ def analyze_stock(ticker):
         latest_signal = signal_line.iloc[-1]
         latest_adx = adx.iloc[-1]
 
+        print(f"{ticker} - rsi: {latest_rsi} macd: {latest_macd} signal: {latest_signal} adx: {latest_adx}")
+
         # Skip if any nan values in latest indicators
         if np.isnan([latest_rsi, latest_macd, latest_signal, latest_adx]).any():
             return None
