@@ -67,7 +67,7 @@ def calculate_bollinger_bands(df, window=20, num_std=2):
 
 def bollinger_band_signal(df):
     upper_band, lower_band = calculate_bollinger_bands(df)
-    close = df['Close'].iloc[-1]
+    close = df['Close'].squeeze()
 
     if close <= lower_band.iloc[-1]:
         return "buy"
