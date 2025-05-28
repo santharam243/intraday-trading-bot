@@ -22,7 +22,7 @@ jobs:
         run: python --version
 
       - name: Install dependencies
-        run: pip install yfinance pandas numpy python-telegram-bot lxml
+        run: pip install yfinance pandas numpy
 
       - name: Run trading script
         env:
