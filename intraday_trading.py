@@ -47,19 +47,27 @@ def calculate_adx(df, period=14):
     high = df['High']
     low = df['Low']
     close = df['Close']
+
     plus_dm = high.diff()
     minus_dm = low.diff()
+
     plus_dm[plus_dm < 0] = 0
     minus_dm[minus_dm > 0] = 0
-    tr1 = pd.DataFrame(high - low)
-    tr2 = pd.DataFrame(abs(high - close.shift()))
-    tr3 = pd.DataFrame(abs(low - close.shift()))
+    minus_dm = abs(minus_dm)  # Ensure it's positive
+
+    tr1 = high - low
+    tr2 = abs(high - close.shift())
+    tr3 = abs(low - close.shift())
     tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
     atr = tr.rolling(window=period).mean()
+
     plus_di = 100 * (plus_dm.rolling(window=period).mean() / atr)
-    minus_di = abs(100 * (minus_dm.rolling(window=period).mean() / atr))
+    minus_di = 100 * (minus_dm.rolling(window=period).mean() / atr)
+
     dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
     adx = dx.rolling(window=period).mean()
+
     return adx
 
 def analyze_stock(ticker):
