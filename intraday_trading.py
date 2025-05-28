@@ -28,7 +28,7 @@ def get_nifty_50_tickers():
     return [
         'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'HINDUNILVR.NS',
         'ICICIBANK.NS', 'KOTAKBANK.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'ITC.NS',
-        'LT.NS', 'AXISBANK.NS', 'HDFC.NS', 'BAJFINANCE.NS', 'ASIANPAINT.NS',
+        'LT.NS', 'AXISBANK.NS', 'ITI.NS', 'BAJFINANCE.NS', 'ASIANPAINT.NS',
         'MARUTI.NS', 'SUNPHARMA.NS', 'DIVISLAB.NS', 'TITAN.NS', 'ULTRACEMCO.NS',
         'NESTLEIND.NS', 'DRREDDY.NS', 'M&M.NS', 'TECHM.NS', 'POWERGRID.NS',
         'ONGC.NS', 'TATASTEEL.NS', 'HCLTECH.NS', 'WIPRO.NS', 'JSWSTEEL.NS',
@@ -84,6 +84,7 @@ def compute_adx(df, period=14):
 
     return adx
 
+
 def analyze_stock(ticker):
     try:
         df = yf.download(ticker, period='5d', interval='15m', progress=False)
@@ -105,18 +106,22 @@ def analyze_stock(ticker):
         if np.isnan([latest_rsi, latest_macd, latest_signal, latest_adx]).any():
             return None
 
-        # Strong Buy signal conditions
-        if (latest_rsi < 30) and (latest_macd > latest_signal) and (latest_adx > 20):
-            return f"📈 *Strong BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, ADX: {latest_adx:.2f})"
+        # Loosened Strong Buy signal conditions
+        # RSI less than 40, MACD close to crossover (macd just crossed or about to cross signal), ADX > 15
+        if (latest_rsi < 40) and (latest_macd >= latest_signal - 0.0005) and (latest_adx > 15):
+            return f"📈 *BUY* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, ADX: {latest_adx:.2f})"
 
-        # Strong Sell signal conditions
-        if (latest_rsi > 70) and (latest_macd < latest_signal) and (latest_adx > 20):
-            return f"📉 *Strong SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, ADX: {latest_adx:.2f})"
+        # Loosened Strong Sell signal conditions
+        # RSI greater than 60, MACD close to crossover down (macd just below or about to cross below signal), ADX > 15
+        if (latest_rsi > 60) and (latest_macd <= latest_signal + 0.0005) and (latest_adx > 15):
+            return f"📉 *SELL* signal for {ticker.replace('.NS','')} (RSI: {latest_rsi:.2f}, MACD: {latest_macd:.4f}, ADX: {latest_adx:.2f})"
 
     except Exception as e:
         print(f"Error analyzing {ticker}: {e}")
 
     return None
+
+      
 
 def main():
     tickers = get_nifty_50_tickers()
