@@ -1,0 +1,15 @@
+name: Test Scheduled Workflow
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 minutes (UTC)
+  workflow_dispatch:        # Optional manual trigger
+
+jobs:
+  echo-time:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print Current UTC Time
+        run: |
+          echo "✅ This workflow ran at: $(date -u)"
