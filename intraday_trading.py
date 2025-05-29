@@ -66,7 +66,7 @@ def compute_stochastic_oscillator(df, k_period=14, d_period=3):
 
 def analyze_stock(ticker):
     try:
-        df = yf.download(ticker, period='5d', interval='15m', progress=False)
+        df = yf.download(ticker, period='1d', interval='5m', progress=False)
         if df.empty or len(df) < 50:
             return None
 
