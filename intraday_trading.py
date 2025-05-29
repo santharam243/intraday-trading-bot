@@ -121,10 +121,9 @@ def main():
     now_ist = datetime.now(ist).strftime('%-d %b %Y %I:%M %p').lower()
     if signals:
         message = f"📊 *Intraday Trading Signals* @ {now_ist}\n\n" + "\n".join(signals)
+        send_telegram_message(message)
     else:
         message = f"📊 No strong signals @ {now_ist}"
-
-    send_telegram_message(message)
     print(message)
 
 if __name__ == '__main__':
